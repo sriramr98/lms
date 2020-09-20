@@ -24,5 +24,9 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+      env:
+        JWT_SECRET: thisisatestsecret
+        JWT_ACCESS_EXPIRATION_MINUTES: 1
+        JWT_REFRESH_EXPIRATION_MINUTES: 2
     - run: yarn --frozen-lockfile
     - run: yarn test
