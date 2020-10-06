@@ -47,6 +47,209 @@ components:
         message:
           type: string
 
+    QuizLecture:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              option:
+                type: string
+              reasonWhyIncorrect:
+                type: string
+              isAnswer:
+                type: boolean
+      example:
+        id: 5ebac534954b54139806c112
+        question: What is a pointer?
+        options:
+          - option: A pointer is a point in the code where execution stops
+            reasonWhyIncorrect: The point where your code execution stops is either when it finds a return statement or it finds the EOF
+            isAnswer: false
+          - option: A pointer is a fundamental data type in any language
+            reasonWhyIncorrect: Pointer is not a fundamental data type in a language
+            isAnswer: false
+          - option: A pointer is a reference to the memory of a variable
+            isAnswer: true
+
+    VideoLecture:
+      type: object
+      properties:
+        id:
+          type: string
+        video:
+          type: string
+          format: uri
+        isDownloadable:
+          type: boolean
+      example:
+        id: 5ebac534954b54139806c112
+        video: http://bucket.s3-website-us-east-1.amazonaws.com/videoBucket/video.mp4
+        isDownloadable: false
+
+    AssignmentLecture:
+      type: object
+      properties:
+        id:
+          type: string
+        estimatedDuration:
+          type: number
+        instructionVideo:
+          type: string
+        instructions:
+          type: string
+        questions:
+          type: array
+          items:
+            type: string
+        solutionVideo:
+          type: string
+        solutions:
+          type: array
+          items:
+            type: string
+      example:
+        id: 5ebac534954b54139806c112
+        estimatedDuration: 40
+        instructionVideo: http://bucket.s3-website-us-east-1.amazonaws.com/videoBucket/video.mp4
+        instructions: Please attempt all questions even if you don't know some of them. It gives us a good insight on where you're lagging so that we can focus better on particular sections
+        questions:
+          - What is a variable?
+          - What are fundamental data types?
+          - How much space does an integer occupy in memory?
+        solutionVideo: http://bucket.s3-website-us-east-1.amazonaws.com/videoBucket/video.mp4
+        solutions:
+          - Think of a variable like an empty box where you can store anything. In programming, variables are a placeholder where you can store certian values
+          - The fundamental data types are the basic forms of data a program can store. They are integer, string, boolean, float and double.
+          - A string occupies 4bytes in memory
+
+    ArticleLecture:
+      type: object
+      properties:
+        articleContent:
+          type: string
+      example:
+        articleContent: This is an article formatted in markdown which is rendered on the page
+
+    CourseContent:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        resources:
+          type: array
+          items:
+            type: string
+        quiz:
+          type: object
+          $ref: '#/components/schemas/QuizLecture'
+        video:
+          type: object
+          $ref: '#/components/schemas/VideoLecture'
+        assignment:
+          type: object
+          $ref: '#/components/schemas/AssignmentLecture'
+        article:
+          type: object
+          $ref: '#/components/schemas/ArticleLecture'
+      examples:
+        Quiz:
+          id: 5ebac534954b54139806c112
+          title: Introduction sections
+          description: Intro to the course and course materials
+          type: LECTURE_VIDEO
+          resources:
+            - http://bucket.s3-website-us-east-1.amazonaws.com/videoBucket/video.mp4
+          quiz:
+            id: 5ebac534954b54139806c112
+            question: What is a pointer?
+            options:
+              - option: A pointer is a point in the code where execution stops
+                reasonWhyIncorrect: The point where your code execution stops is either when it finds a return statement or it finds the EOF
+                isAnswer: false
+              - option: A pointer is a fundamental data type in any language
+                reasonWhyIncorrect: Pointer is not a fundamental data type in a language
+                isAnswer: false
+              - option: A pointer is a reference to the memory of a variable
+                isAnswer: true
+        Video:
+          id: 5ebac534954b54139806c112
+          title: Introduction sections
+          description: Intro to the course and course materials
+          type: LECTURE_VIDEO
+          resources:
+            - http://bucket.s3-website-us-east-1.amazonaws.com/videoBucket/video.mp4
+          video:
+            id: 5ebac534954b54139806c112
+            video: http://bucket.s3-website-us-east-1.amazonaws.com/videoBucket/video.mp4
+            isDownloadable: false
+        Assignment:
+          id: 5ebac534954b54139806c112
+          estimatedDuration: 40
+          instructionVideo: http://bucket.s3-website-us-east-1.amazonaws.com/videoBucket/video.mp4
+          instructions: Please attempt all questions even if you don't know some of them. It gives us a good insight on where you're lagging so that we can focus better on particular sections
+          questions:
+            - What is a variable?
+            - What are fundamental data types?
+            - How much space does an integer occupy in memory?
+          solutionVideo: http://bucket.s3-website-us-east-1.amazonaws.com/videoBucket/video.mp4
+          solutions:
+            - Think of a variable like an empty box where you can store anything. In programming, variables are a placeholder where you can store certian values
+            - The fundamental data types are the basic forms of data a program can store. They are integer, string, boolean, float and double.
+            - A string occupies 4bytes in memory
+        Article:
+          articleContent: This is an article formatted in markdown which is rendered on the page
+
+    CourseSection:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CourseContent'
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        price:
+          type: string
+        level:
+          type: string
+        category:
+          type: string
+        titleImage:
+          type: string
+        promotionalVideo:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/CourseSection'
+
   responses:
     DuplicateEmail:
       description: Email already taken
