@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.post('/create', auth('createCourse'), validate(courseValidation.createCourse), courseController.createCourse);
 
+router.patch('/:courseId', auth('manageCourse'), validate(courseValidation.updateCourse), courseController.updateCourse);
+
 module.exports = router;
 
 /**
