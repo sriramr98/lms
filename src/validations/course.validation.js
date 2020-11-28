@@ -1,6 +1,6 @@
 const Joi = require('@hapi/joi');
 const { objectId } = require('./custom.validation');
-const { STUDENT_LEVELS, COURSE_CATEGORY, COURSE_CONTENT_TYPES } = require('../config/constants');
+const { STUDENT_LEVELS, COURSE_CATEGORY, COURSE_CONTENT_TYPES, COURSE_STATUS_TYPES } = require('../config/constants');
 
 const createCourse = {
   body: Joi.object().keys({
@@ -10,127 +10,183 @@ const createCourse = {
   }),
 };
 
-const courseQuizOptions = Joi.object().keys({
-  option: Joi.string().required(),
-  isAnswer: Joi.boolean().valid(true, false),
-  reasonWhyIncorrect: Joi.string().when('isAnswer', {
-    is: Joi.boolean().valid(false),
-    then: Joi.string().required(),
-  }),
-});
+const getCourseQuizOptions = (isRelease = false) => {
+  return Joi.object().keys({
+    id: isRelease ? Joi.custom(objectId).required() : Joi.forbidden(),
+    option: Joi.string().required(),
+    isAnswer: isRelease ? Joi.boolean().valid(true, false).required() : Joi.boolean().valid(true, false),
+    reasonWhyIncorrect: Joi.string().when('isAnswer', {
+      is: Joi.boolean().valid(false),
+      then: Joi.string().required(),
+    }),
+  });
+};
 
-const courseQuiz = Joi.object().keys({
-  question: Joi.string().required(),
-  options: Joi.array().items(courseQuizOptions).required().min(1),
-});
+const getCourseQuizSchema = (isRelease = false) => {
+  return Joi.object().keys({
+    id: isRelease ? Joi.custom(objectId).required() : Joi.forbidden(),
+    question: Joi.string().required(),
+    options: Joi.array().items(getCourseQuizOptions(isRelease)).required().min(1),
+  });
+};
 
-const courseVideoLecture = Joi.object().keys({
-  video: Joi.string().required(),
-  isDownloadable: Joi.boolean().valid(true, false),
-});
+const getCourseVideoLectureSchema = (isRelease = false) => {
+  return Joi.object().keys({
+    id: isRelease ? Joi.custom(objectId).required() : Joi.forbidden(),
+    video: Joi.string().required(),
+    isDownloadable: isRelease ? Joi.boolean().valid(true, false).required() : Joi.boolean().valid(true, false),
+  });
+};
 
-const courseAssignment = Joi.object().keys({
-  estimatedDuration: Joi.number().min(1),
-  instructionVideo: Joi.string(),
-  instructions: Joi.string(),
-  questions: Joi.array().items(Joi.string()).min(1),
-  solutionVideo: Joi.string(),
-  solutions: Joi.array().items(Joi.string()).min(1),
-});
+const getCourseAssignmentSchema = (isRelease = false) => {
+  return Joi.object().keys({
+    id: isRelease ? Joi.custom(objectId).required() : Joi.forbidden(),
+    estimatedDuration: isRelease ? Joi.number().min(1).required() : Joi.number().min(1),
+    instructionVideo: isRelease ? Joi.string().required() : Joi.string(),
+    instructions: isRelease ? Joi.string().required() : Joi.string(),
+    questions: isRelease ? Joi.array().items(Joi.string()).min(1).required() : Joi.array().items(Joi.string()).min(1),
+    solutionVideo: isRelease ? Joi.string().required() : Joi.string(),
+    solutions: isRelease ? Joi.array().items(Joi.string()).min(1).required() : Joi.array().items(Joi.string()).min(1),
+  });
+};
 
-const courseArticle = Joi.object().keys({
-  articleContent: Joi.string().required(),
-});
+const getCourseArticleSchema = (isRelease = false) => {
+  return Joi.object().keys({
+    id: isRelease ? Joi.custom(objectId).required() : Joi.forbidden(),
+    articleContent: Joi.string().required(),
+  });
+};
 
-const courseSectionContent = Joi.object().keys({
-  type: Joi.string().valid(...Object.values(COURSE_CONTENT_TYPES)),
-  title: Joi.string().required(),
-  description: Joi.string().required(),
-  resources: Joi.array().items(Joi.string()),
-  quiz: courseQuiz.when('type', {
-    switch: [
-      {
-        is: COURSE_CONTENT_TYPES.LECTURE_VIDEO,
-        then: Joi.forbidden(),
-      },
-      {
-        is: COURSE_CONTENT_TYPES.ASSIGNMENT,
-        then: Joi.forbidden(),
-      },
-      {
-        is: COURSE_CONTENT_TYPES.LECTURE_ARTICLE,
-        then: Joi.forbidden(),
-      },
-    ],
-  }),
-  video: courseVideoLecture.when('type', {
-    switch: [
-      {
-        is: COURSE_CONTENT_TYPES.QUIZ,
-        then: Joi.forbidden(),
-      },
-      {
-        is: COURSE_CONTENT_TYPES.ASSIGNMENT,
-        then: Joi.forbidden(),
-      },
-      {
-        is: COURSE_CONTENT_TYPES.LECTURE_ARTICLE,
-        then: Joi.forbidden(),
-      },
-    ],
-  }),
-  assignment: courseAssignment.when('type', {
-    switch: [
-      {
-        is: COURSE_CONTENT_TYPES.LECTURE_VIDEO,
-        then: Joi.forbidden(),
-      },
-      {
-        is: COURSE_CONTENT_TYPES.QUIZ,
-        then: Joi.forbidden(),
-      },
-      {
-        is: COURSE_CONTENT_TYPES.LECTURE_ARTICLE,
-        then: Joi.forbidden(),
-      },
-    ],
-  }),
-  article: courseArticle.when('type', {
-    switch: [
-      {
-        is: COURSE_CONTENT_TYPES.LECTURE_VIDEO,
-        then: Joi.forbidden(),
-      },
-      {
-        is: COURSE_CONTENT_TYPES.ASSIGNMENT,
-        then: Joi.forbidden(),
-      },
-      {
-        is: COURSE_CONTENT_TYPES.QUIZ,
-        then: Joi.forbidden(),
-      },
-    ],
-  }),
-});
+const getCourseSectionContentSchema = (isRelease = false) => {
+  return Joi.object().keys({
+    id: isRelease ? Joi.custom(objectId).required() : Joi.forbidden(),
+    type: Joi.string().valid(...Object.values(COURSE_CONTENT_TYPES)),
+    title: Joi.string().required(),
+    description: Joi.string().required(),
+    resources: Joi.array().items(Joi.string()),
+    quiz: getCourseQuizSchema(isRelease).when('type', {
+      switch: [
+        {
+          is: COURSE_CONTENT_TYPES.LECTURE_VIDEO,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.ASSIGNMENT,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.LECTURE_ARTICLE,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.QUIZ,
+          then: isRelease ? Joi.required() : Joi.optional(),
+        },
+      ],
+    }),
+    video: getCourseVideoLectureSchema(isRelease).when('type', {
+      switch: [
+        {
+          is: COURSE_CONTENT_TYPES.QUIZ,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.ASSIGNMENT,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.LECTURE_ARTICLE,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.LECTURE_VIDEO,
+          then: isRelease ? Joi.required() : Joi.optional(),
+        },
+      ],
+    }),
+    assignment: getCourseAssignmentSchema(isRelease).when('type', {
+      switch: [
+        {
+          is: COURSE_CONTENT_TYPES.LECTURE_VIDEO,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.QUIZ,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.LECTURE_ARTICLE,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.ASSIGNMENT,
+          then: isRelease ? Joi.required() : Joi.optional(),
+        },
+      ],
+    }),
+    article: getCourseArticleSchema(isRelease).when('type', {
+      switch: [
+        {
+          is: COURSE_CONTENT_TYPES.LECTURE_VIDEO,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.ASSIGNMENT,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.QUIZ,
+          then: Joi.forbidden(),
+        },
+        {
+          is: COURSE_CONTENT_TYPES.LECTURE_ARTICLE,
+          then: isRelease ? Joi.required() : Joi.optional(),
+        },
+      ],
+    }),
+  });
+};
 
-const courseSection = Joi.object().keys({
-  title: Joi.string().required(),
-  description: Joi.string().required(),
-  content: Joi.array().items(courseSectionContent),
-});
+const getCourseSectionSchema = (isRelease = false) => {
+  return Joi.object().keys({
+    id: isRelease ? Joi.custom(objectId).required() : Joi.forbidden(),
+    title: Joi.string().required(),
+    description: Joi.string().required(),
+    content: Joi.array().items(getCourseSectionContentSchema(isRelease)),
+  });
+};
+
+const getCourseSchema = (isRelease = false) => {
+  return Joi.object().keys({
+    id: isRelease ? Joi.custom(objectId).required() : Joi.forbidden(),
+    title: isRelease ? Joi.string().min(10).required() : Joi.string().min(10),
+    description: isRelease ? Joi.string().min(50).required() : Joi.string().min(50),
+    status: isRelease ? Joi.valid(COURSE_STATUS_TYPES.DRAFT) : Joi.forbidden(),
+    price: isRelease ? Joi.string().required() : Joi.string(),
+    level: isRelease
+      ? Joi.string()
+          .valid(...Object.values(STUDENT_LEVELS))
+          .required()
+      : Joi.string().valid(...Object.values(STUDENT_LEVELS)),
+    category: isRelease
+      ? Joi.string()
+          .valid(...Object.values(COURSE_CATEGORY))
+          .required()
+      : Joi.string().valid(...Object.values(COURSE_CATEGORY)),
+    titleImage: isRelease ? Joi.string().required() : Joi.string(),
+    promotionalVideo: isRelease ? Joi.string().required() : Joi.string(),
+    sections: Joi.array().items(getCourseSectionSchema(isRelease)),
+  });
+};
 
 const updateCourse = {
-  body: Joi.object().keys({
-    title: Joi.string().min(10),
-    description: Joi.string().min(50),
-    status: Joi.forbidden(),
-    price: Joi.string(),
-    level: Joi.string().valid(...Object.values(STUDENT_LEVELS)),
-    category: Joi.string().valid(...Object.values(COURSE_CATEGORY)),
-    titleImage: Joi.string(),
-    promotionalVideo: Joi.string(),
-    sections: Joi.array().items(courseSection),
-  }),
+  body: getCourseSchema(false),
+  params: {
+    courseId: Joi.custom(objectId).required(),
+  },
+};
+
+const releaseCourse = {
   params: {
     courseId: Joi.custom(objectId).required(),
   },
@@ -139,4 +195,6 @@ const updateCourse = {
 module.exports = {
   createCourse,
   updateCourse,
+  releaseCourse,
+  courseValidation: getCourseSchema,
 };

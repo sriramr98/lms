@@ -1,5 +1,6 @@
 const request = require('supertest');
 const faker = require('faker');
+const mongoose = require('mongoose');
 const httpStatus = require('http-status');
 const _ = require('lodash');
 
@@ -9,7 +10,7 @@ const { Course } = require('../../src/models');
 const { insertUsers } = require('../fixtures/user.fixture');
 const { admin, userOne } = require('../fixtures/user.fixture');
 const { adminAccessToken, userOneAccessToken } = require('../fixtures/token.fixture');
-const { course: courseData, insertCourse, findCourse } = require('../fixtures/course.fixture');
+const { course: courseData, insertCourse, findCourse, releaseCourse } = require('../fixtures/course.fixture');
 const { COURSE_STATUS_TYPES, COURSE_CONTENT_TYPES } = require('../../src/config/constants');
 
 setupTestDB();
@@ -586,6 +587,60 @@ describe('Course routes', () => {
       };
 
       await request(app).patch(route).set('Authorization', `Bearer ${userOneAccessToken}`).send(updateData).expect(401);
+    });
+  });
+
+  describe('PATCH /v1/course/:courseId/release', () => {
+    let route = '/v1/course/:courseId/release';
+    let course;
+    beforeEach(async () => {
+      course = _.cloneDeep(releaseCourse);
+      route = route.replace(':courseId', course._id);
+      await insertCourse(releaseCourse);
+      await insertUsers([admin]);
+    });
+
+    it('should return 200 and successfully release a course if data is ok', async () => {
+      await request(app).patch(route).set('Authorization', `Bearer ${adminAccessToken}`).expect(200);
+
+      const updatedCourse = await findCourse(course._id);
+      expect(updatedCourse).toBeTruthy();
+      expect(updatedCourse.status).toEqual(COURSE_STATUS_TYPES.RELEASED);
+      expect(updatedCourse.releaseDate).toBeTruthy();
+    });
+
+    it('should return 400 and throw error if course is already released', async () => {
+      const releasedCoursedData = _.cloneDeep(releaseCourse);
+      const releasedCourseId = mongoose.Types.ObjectId();
+      releasedCoursedData._id = releasedCourseId;
+      releasedCoursedData.status = COURSE_STATUS_TYPES.RELEASED;
+      await insertCourse(releasedCoursedData);
+
+      await request(app)
+        .patch(route.replace(course._id, releasedCourseId))
+        .set('Authorization', `Bearer ${adminAccessToken}`)
+        .expect(400);
+    });
+
+    it('should return 400 and throw error if course is archived', async () => {
+      const releasedCoursedData = _.cloneDeep(releaseCourse);
+      const releasedCourseId = mongoose.Types.ObjectId();
+      releasedCoursedData._id = releasedCourseId;
+      releasedCoursedData.status = COURSE_STATUS_TYPES.ARCHIVED;
+      await insertCourse(releasedCoursedData);
+
+      await request(app)
+        .patch(route.replace(course._id, releasedCourseId))
+        .set('Authorization', `Bearer ${adminAccessToken}`)
+        .expect(400);
+    });
+
+    it('should throw a 404 error if trying to release a non exinsting course', async () => {
+      const courseId = mongoose.Types.ObjectId();
+      await request(app)
+        .patch(route.replace(course._id, courseId))
+        .set('Authorization', `Bearer ${adminAccessToken}`)
+        .expect(404);
     });
   });
 });
