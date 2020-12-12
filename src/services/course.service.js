@@ -19,7 +19,16 @@ const updateCourse = async (id, courseUpdate) => {
   return Course.findByIdAndUpdate(id, courseUpdate, { new: true, runValidators: true });
 };
 
+/**
+ * @param {ObjectId} id Course ID
+ * @returns {Promise<Course>}
+ */
+const getCourse = (courseId) => {
+  return Course.findById(courseId);
+};
+
 module.exports = {
   createCourse,
   updateCourse,
+  getCourse,
 };

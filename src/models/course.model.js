@@ -113,6 +113,9 @@ const courseSchema = mongoose.Schema({
   promotionalVideo: {
     type: String,
   },
+  releaseDate: {
+    type: Date,
+  },
 });
 
 courseSchema.plugin(toJSON);
